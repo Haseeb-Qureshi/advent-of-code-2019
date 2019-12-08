@@ -1,6 +1,5 @@
 # Opcode 3 takes a single integer as input and saves it to the position given by its only parameter. For example, the instruction 3,50 would take an input value and store it at address 50.
 # Opcode 4 outputs the value of its only parameter. For example, the instruction 4,50 would output the value at address 50.
-# Programs that use these instructions will come with documentation that explains what should be connected to the input and output. The program 3,0,4,0,99 outputs whatever it gets as input, then halts.
 
 def run_program(tape, input, output)
   tape = tape.dup
@@ -19,24 +18,40 @@ def run_program(tape, input, output)
     param2_immediate = !digits[1].zero?
     param3_immediate = !digits[0].zero?
 
+    op1 = operand1 && (param1_immediate ? operand1 : tape[operand1])
+    op2 = operand2 && (param2_immediate ? operand2 : tape[operand2])
+
     case opcode
-    when 1
-      op1 = param1_immediate ? operand1 : tape[operand1]
-      op2 = param2_immediate ? operand2 : tape[operand2]
+    when 1 # add
       tape[operand3] = op1 + op2
       i += 4
-    when 2
-      op1 = param1_immediate ? operand1 : tape[operand1]
-      op2 = param2_immediate ? operand2 : tape[operand2]
+    when 2 # multiply
       tape[operand3] = op1 * op2
       i += 4
-    when 3
+    when 3 # gets
       tape[operand1] = input.read
       i += 2
-    when 4
-      op1 = param1_immediate ? operand1 : tape[operand1]
+    when 4 # puts
       output.write(op1)
       i += 2
+    when 5 # jump if true
+      if !op1.zero?
+        i = op2
+      else
+        i += 3
+      end
+    when 6 # jump if false
+      if op1.zero?
+        i = op2
+      else
+        i += 3
+      end
+    when 7 # less than?
+      tape[operand3] = op1 < op2 ? 1 : 0
+      i += 4
+    when 8 # equals?
+      tape[operand3] = op1 == op2 ? 1 : 0
+      i += 4
     when 99
       break
     else
@@ -47,20 +62,23 @@ def run_program(tape, input, output)
   tape
 end
 
-class Reader
+class Reader < Struct.new(:hardcoded_input)
   def read
-    gets.chomp.to_i
+    hardcoded_input || gets.chomp.to_i
   end
 end
 
-class Writer
+class Writer < Struct.new(:ignore_input)
   def write(x)
-    puts x
+    puts x unless x == ignore_input
   end
 end
 
 puts "Part 1"
-original_input = File.read('input05.txt').chomp.split(',').map(&:to_i).freeze
-run_program(original_input, Reader.new, Writer.new)
+input = File.read('input05.txt').chomp.split(',').map(&:to_i).freeze
+run_program(input, Reader.new(1), Writer.new(0))
 
 puts "Part 2"
+file = File.read('input05.txt')
+input = file.chomp.split(',').map(&:to_i).freeze
+run_program(input, Reader.new(5), Writer.new(0))
