@@ -55,7 +55,6 @@ def run_program(tape, input, output)
     when 99
       break
     else
-      p digits
       raise "Unexpected opcode at index #{i}: #{opcode}, #{tape[i]}"
     end
   end
