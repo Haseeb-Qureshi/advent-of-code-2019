@@ -153,9 +153,6 @@ wire1_lines.each_with_index do |line1, i|
       dist1 = line1.steps_so_far - manhattan_distance_between(point, line1.end)
       dist2 = line2.steps_so_far - manhattan_distance_between(point, line2.end)
       next if point.x.zero? && point.y.zero?
-      # p [dist1, dist2]
-      # p [line1, line2]
-      # p point
       points_with_distances << [point, dist1 + dist2]
     end
   end
