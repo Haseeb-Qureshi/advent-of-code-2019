@@ -1,39 +1,66 @@
-# However, they do remember a few key facts about the password:
+# Opcode 3 takes a single integer as input and saves it to the position given by its only parameter. For example, the instruction 3,50 would take an input value and store it at address 50.
+# Opcode 4 outputs the value of its only parameter. For example, the instruction 4,50 would output the value at address 50.
+# Programs that use these instructions will come with documentation that explains what should be connected to the input and output. The program 3,0,4,0,99 outputs whatever it gets as input, then halts.
 
-# It is a six-digit number.
-# The value is within the range given in your puzzle input.
-# Two adjacent digits are the same (like 22 in 122345).
-# Going from left to right, the digits never decrease; they only ever increase or stay the same (like 111123 or 135679).
-#
-# How many different passwords within the range given in your puzzle input meet these criteria?
+def run_program(tape, input, output)
+  tape = tape.dup
+  i = 0
+
+  until i >= tape.length
+    operand1 = tape[i + 1]
+    operand2 = tape[i + 2]
+    operand3 = tape[i + 3]
+
+    digits = tape[i].digits.reverse.tap do |digits|
+      digits.unshift(0) until digits.length == 5
+    end
+    opcode = digits[3] * 10 + digits[4]
+    param1_immediate = !digits[2].zero?
+    param2_immediate = !digits[1].zero?
+    param3_immediate = !digits[0].zero?
+
+    case opcode
+    when 1
+      op1 = param1_immediate ? operand1 : tape[operand1]
+      op2 = param2_immediate ? operand2 : tape[operand2]
+      tape[operand3] = op1 + op2
+      i += 4
+    when 2
+      op1 = param1_immediate ? operand1 : tape[operand1]
+      op2 = param2_immediate ? operand2 : tape[operand2]
+      tape[operand3] = op1 * op2
+      i += 4
+    when 3
+      tape[operand1] = input.read
+      i += 2
+    when 4
+      op1 = param1_immediate ? operand1 : tape[operand1]
+      output.write(op1)
+      i += 2
+    when 99
+      break
+    else
+      p digits
+      raise "Unexpected opcode at index #{i}: #{opcode}, #{tape[i]}"
+    end
+  end
+  tape
+end
+
+class Reader
+  def read
+    gets.chomp.to_i
+  end
+end
+
+class Writer
+  def write(x)
+    puts x
+  end
+end
 
 puts "Part 1"
-
-INPUTS = (153517..630395)
-
-def is_valid?(num)
-  digits = num.digits
-  digits.each_cons(2).all? { |a, b| a >= b } &&
-    digits.each_cons(2).any? { |pair| pair.reduce(:eql?) }
-end
-
-puts INPUTS.count { |num| is_valid?(num) }
+original_input = File.read('input05.txt').chomp.split(',').map(&:to_i).freeze
+run_program(original_input, Reader.new, Writer.new)
 
 puts "Part 2"
-
-# The two adjacent matching digits are not part of a larger group of matching digits.
-#
-# Given this additional criterion, but still ignoring the range rule, the following are now true:
-#
-# 112233 meets these criteria because the digits never decrease and all repeated digits are exactly two digits long.
-# 123444 no longer meets the criteria (the repeated 44 is part of a larger group of 444).
-# 111122 meets the criteria (even though 1 is repeated more than twice, it still contains a double 22).
-# How many different passwords within the range given in your puzzle input meet all of the criteria?
-
-def is_valid_part_2?(num)
-  digits = num.digits
-  digits.each_cons(2).all? { |a, b| a >= b } &&
-    digits.group_by(&:itself).any? { |h, k| k.length == 2 }
-end
-
-puts INPUTS.count { |num| is_valid_part_2?(num) }
