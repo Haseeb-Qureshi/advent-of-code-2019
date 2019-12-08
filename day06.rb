@@ -1,4 +1,3 @@
-# What is the total number of direct and indirect orbits in your map data?
 require 'set'
 
 input = File.read("input06.txt")
@@ -28,8 +27,6 @@ puts all_stars.sum { |star| total_orbits(star, orbiters, num_orbiters) }
 
 
 puts "Part 2"
-# What is the minimum number of orbital transfers required to move from the object YOU are orbiting to the object SAN is orbiting? (Between the objects they are orbiting - not between YOU and SAN.)
-
 # Graph search between YOU and orbitee of SAN
 origin = 'YOU'
 target = orbiters.keys.find { |star| orbiters[star].include?('SAN') }
@@ -39,7 +36,7 @@ connections.each do |star, orbiters_of_star|
   orbiters_of_star.each { |orbiter| connections[orbiter] << star }
 end
 
-def bfs(source, target, graph)
+def bfs_distance(source, target, graph)
   queue = [[source, 0]]
   visited = Set.new([source])
 
@@ -57,4 +54,4 @@ def bfs(source, target, graph)
   raise "Couldn't find it!"
 end
 
-p bfs(origin, target, connections) - 1
+puts bfs_distance(origin, target, connections) - 1

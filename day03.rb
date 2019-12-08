@@ -1,8 +1,3 @@
-# These wires cross at two locations (marked X), but the lower-left one is closer to the central port: its distance is 3 + 3 = 6.
-
-# R75,D30,R83,U83,L12,D49,R71,U7,L72
-# U62,R66,U55,R34,D71,R55,D58,R83 = distance 159
-
 puts "Part 1: "
 inputs = File.readlines("input03.txt").map(&:chomp)
 wire1 = inputs.first.split(',')
@@ -143,8 +138,7 @@ points.reject! { |point| point.x.zero? && point.y.zero? }
 
 p points.map { |point| manhattan_distance(point) }.min
 
-## Part 2 ##
-
+puts "Part 2: "
 points_with_distances = []
 wire1_lines.each_with_index do |line1, i|
   wire2_lines.each_with_index do |line2, j|
