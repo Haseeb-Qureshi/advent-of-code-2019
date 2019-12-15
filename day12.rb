@@ -1,3 +1,5 @@
+require 'set'
+require 'digest'
 puts "Part 1"
 
 class Moon
@@ -13,6 +15,10 @@ class Moon
 
   def inspect
     to_s
+  end
+
+  def h
+    [x, y, z, dx, dy, dz].join(',')
   end
 
   def kinetic_energy
@@ -73,10 +79,6 @@ def apply_velocities(moons)
 end
 
 file = File.read("input12.txt").chomp
-# file = "<x=-1, y=0, z=2>
-# <x=2, y=-10, z=-7>
-# <x=4, y=-8, z=8>
-# <x=3, y=5, z=-1>"
 moons = file.lines.map(&:chomp).map do |line|
   Moon.new(*line.scan(/[xyz]=(-?\d+)/).flatten.map(&:to_i))
 end
@@ -86,3 +88,29 @@ end
 end
 
 puts moons.sum(&:total_energy)
+
+puts "Part 2"
+
+def find_cycle_length(dim, moons)
+  previous_states = Set.new
+  i = 0
+  loop do
+    state = moons.map(&dim).join + moons.map(&('d' + dim.to_s).to_sym).join
+
+    return i if previous_states.include?(state)
+
+    previous_states << state
+    i += 1
+    step(moons)
+  end
+end
+
+cycle_lengths = [:x, :y, :z].map do |dim|
+  moons = file.lines.map(&:chomp).map do |line|
+    Moon.new(*line.scan(/[xyz]=(-?\d+)/).flatten.map(&:to_i))
+  end
+
+  find_cycle_length(dim, moons)
+end
+
+puts cycle_lengths.reduce(:lcm)
