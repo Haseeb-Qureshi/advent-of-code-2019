@@ -14,3 +14,16 @@ file.lines.map do |line|
   end
   [[num.to_i, output], ]
 end
+
+# THIS IS LIKE MAKE CHANGE
+
+CACHE = {}
+def ore_for(output)
+  best_ore_amount = Float::INFINITY
+  PROCESSES[output].each do |process|
+    output_units = process.output_units
+    process.inputs.map do |input|
+      best_ore_amount(input.type) * input.quantity
+    end
+  end
+end
