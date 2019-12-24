@@ -1,20 +1,19 @@
 require 'set'
 
-puts "Part 1"
-
 class Sim
   attr_reader :grid
   EMPTY = '.'.freeze
   BUG = '#'.freeze
 
-  def initialize(grid)
+  def initialize(grid, print: false)
     @grid = grid
     @next_grid = grid.map(&:dup)
     @previous_layouts = Set.new([grid.join]) # can transform into number
+    @print = print
   end
 
   def start!
-    print
+    print if @print
 
     0.upto(Float::INFINITY) do |i|
       @next_grid = grid.map(&:dup)
@@ -29,13 +28,13 @@ class Sim
 
       if seen_before?
         @grid = @next_grid
-        print
-        puts "I have seen it on the #{i}th iteration! The value is: #{value}"
+        print if @print
+        puts value
         return
       end
 
       @grid = @next_grid
-      print
+      print if @Print
     end
   end
 
@@ -76,7 +75,9 @@ class Sim
   def bug_maybe_dies!(pos)
     return unless at(pos) == BUG
 
-    @next_grid[pos[0]][pos[1]] = EMPTY unless things_adjacent_to(pos).count(BUG) == 1
+    unless things_adjacent_to(pos).count(BUG) == 1
+      @next_grid[pos[0]][pos[1]] = EMPTY
+    end
   end
 
   def space_maybe_infests!(pos)
@@ -94,6 +95,7 @@ class Sim
   end
 end
 
+puts "Part 1"
 
 input = "#..#.
 .....
@@ -105,3 +107,106 @@ grid = input.lines.map(&:chomp).map(&:chars)
 
 s = Sim.new(grid)
 s.start!
+
+puts "Part 2"
+
+class MultidimensionalSim < Sim
+  attr_reader :grids
+
+  def initialize(grid)
+    @grids = Array.new(400) { empty_grid }
+    @grids[100] = grid
+  end
+
+  def start!(steps: 10)
+    steps.times do
+      @working_grids = @grids.map { |grid| grid.map(&:dup) }
+      @grids.each_index do |grid_no|
+        0.upto(4) do |x|
+          0.upto(4) do |y|
+            pos = [x, y]
+            next if pos == [2, 2]
+            bug_maybe_dies!(grid_no, pos)
+            space_maybe_infests!(grid_no, pos)
+          end
+        end
+      end
+      @grids = @working_grids
+    end
+
+    puts total_bugs
+  end
+
+  private
+
+  def empty_grid
+    [("." * 5).chars] * 5
+  end
+
+  def print
+    system "clear"
+    @grids.each { |grid| grid.each { |line| puts line.join }; puts "-" * 5 }
+  end
+
+  def things_adjacent_to(grid_no, pos)
+    x, y = pos
+    immediate_adjacents = [
+      [x - 1, y],
+      [x + 1, y],
+      [x, y + 1],
+      [x, y - 1],
+    ].reject { |i, j| [i, j] == [2, 2] }
+     .select { |i, j| i.between?(0, 4) && j.between?(0, 4) }
+     .map { |pos| at(grid_no, pos) }
+
+    immediate_adjacents << at(grid_no - 1, [1, 2]) if x == 0 # top row, 8
+    immediate_adjacents << at(grid_no - 1, [3, 2]) if x == 4 # bottom row, 18
+    immediate_adjacents << at(grid_no - 1, [2, 1]) if y == 0 # left side, 12
+    immediate_adjacents << at(grid_no - 1, [2, 3]) if y == 4 # right side, 14
+
+    next_grid = @working_grids[grid_no + 1]
+
+    return immediate_adjacents if next_grid.nil?
+
+    case pos
+    when [1, 2] # top row, 8
+      immediate_adjacents.concat(next_grid[0]) # add the whole top row
+    when [2, 1] # left column, 12
+      immediate_adjacents.concat(next_grid.map(&:first))
+    when [3, 2] # bottom row, 18
+      immediate_adjacents.concat(next_grid[-1]) # add the whole top row
+    when [2, 3] # right column, 14
+      immediate_adjacents.concat(next_grid.map(&:last))
+    end
+
+    immediate_adjacents
+  end
+
+  def at(grid_no, pos)
+    @grids[grid_no][pos[0]][pos[1]]
+  end
+
+  def bug_maybe_dies!(grid_no, pos)
+    return unless at(grid_no, pos) == BUG
+
+    unless things_adjacent_to(grid_no, pos).count(BUG) == 1
+      @working_grids[grid_no][pos[0]][pos[1]] = EMPTY
+    end
+  end
+
+  def space_maybe_infests!(grid_no, pos)
+    return unless at(grid_no, pos) == EMPTY
+
+    if things_adjacent_to(grid_no, pos).count(BUG).between?(1, 2)
+      @working_grids[grid_no][pos[0]][pos[1]] = BUG
+    end
+  end
+
+  def total_bugs
+    @grids.sum { |grid| grid.flatten.count(BUG) }
+  end
+end
+
+grid = input.lines.map(&:chomp).map(&:chars)
+
+MultidimensionalSim.new(grid).start!(steps: 200)
